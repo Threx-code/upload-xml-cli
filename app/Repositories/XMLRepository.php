@@ -1,29 +1,36 @@
 <?php
 
 namespace App\Repositories;
+use App\Services\XMLService;
+use Google\Exception;
 use \Illuminate\Http\JsonResponse;
 use App\Contracts\XMLInterface;
 
 class XMLRepository implements XMLInterface
 {
-
-    public static function callGoogleAPI($request)
+    /**
+     * @param $request
+     * @return JsonResponse|string
+     * @throws Exception
+     */
+    public static function authenticateUser($request): JsonResponse|string
     {
-        // TODO: Implement callGoogleAPI() method.
+        return (new XMLService)->authentication($request);
     }
 
-    public static function localXML($request)
+    /**
+     * @throws Exception
+     */
+    public static function getGoogleURL(): string
     {
-        // TODO: Implement localXML() method.
+        return (new XMLService)->googleAuthURL();
     }
 
-    public static function remoteXML($request)
+    /**
+     * @throws Exception
+     */
+    public static function uploadXMLFileToGoogleSheet($data)
     {
-        // TODO: Implement remoteXML() method.
-    }
-
-    public static function authenticateUser($request)
-    {
-        // TODO: Implement authenticateUser() method.
+        return (new XMLService)->uploadXMLToGoogleSheet($data);
     }
 }

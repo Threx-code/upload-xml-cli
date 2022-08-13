@@ -15,10 +15,8 @@ use App\Http\Controllers\Api\XMLController;
 |
 */
 
-Route::get('authenticate/google', [XMLController::class, 'authURL']);
-Route::get('authenticate/users', [XMLController::class, 'auththentication']);
-//Route::get('authenticate/test', [XMLController::class, 'revalidateAccessToken'])->middleware('auth.api');
-
+Route::get('authenticate/google', [XMLController::class, 'getAuthUrl']);
+Route::get('authenticate/users', [XMLController::class, 'authenticateUser']);
 Route::middleware('auth:api')->group(function(){
-    Route::get('authenticate/test', [XMLController::class, 'revalidateAccessToken']);
+    Route::get('upload/xml', [XMLController::class, 'uploadXMLFile']);
 });
