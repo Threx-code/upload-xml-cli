@@ -14,7 +14,7 @@ class Kernel extends ConsoleKernel
      * @return void
      */
     protected  $commands = [
-        \App\Console\Commands\RunXML::class,
+        Commands\RunXML::class,
     ];
     protected function schedule(Schedule $schedule)
     {

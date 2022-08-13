@@ -4,8 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Enums\XMLEnum;
-use App\Services\GoogleSheetClient;
-use Google\Client as GoogleClient;
+
 
 class RunXML extends Command
 {
@@ -15,7 +14,9 @@ class RunXML extends Command
      *
      * @var string
      */
-    protected $signature = 'xml:upload {filename} {type?}  {api_config?*}';
+   // protected $signature = 'xml:upload {filename : xml file to be uploaded} {type? : the type if it\'s local or remote}  {api_config?*}';
+
+    protected $signature = 'xml:upload';
 
     /**
      * The console command description.
@@ -31,21 +32,11 @@ class RunXML extends Command
      */
     public function handle()
     {
-        echo implode(',', []);
-        $client = new GoogleClient();
-        $google = new GoogleSheetClient($client);
-        $abc = $google->createTitle();
-        print_r($abc);
-        $file = $this->argument('filename');
-        $xmlObject = simplexml_load_string(file_get_contents($file), 'SimpleXMLElement', LIBXML_COMPACT | LIBXML_PARSEHUGE|LIBXML_NOCDATA);
-        $json = json_decode(json_encode($xmlObject, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
-        foreach($json as $key => $value){
-            foreach($value as $newKey => $newValue){
-                foreach($newValue as $hhh){
-                    //print_r($hhh);
-                }
+        //$this->options();
+        //$this->option('filename');
+        echo implode(',', [1,2,3,4,5]);
 
-            }
-        }
+        //$file = $this->argument('filename');
+
     }
 }

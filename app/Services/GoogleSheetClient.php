@@ -15,7 +15,7 @@ class GoogleSheetClient
      */
     public static function getGoogleCredentials(): Client
     {
-        $client = new \Client;
+        $client = new Client;
         $config = storage_path().'/credentials.json';
         $appName = config('gconfig.google_app_name');
         $client->setApplicationName($appName);
@@ -35,7 +35,7 @@ class GoogleSheetClient
     {
         $client = self::getGoogleCredentials();
         $client->useApplicationDefaultCredentials();
-        $service = new \Google_Service_Sheets(self::$client);
+        $service = new \Google_Service_Sheets($client);
         $spreadSheetId = config('gconfig.google_sheet_id');
         $values = $xmlData;
         $body = new \Google_Service_Sheets_ValueRange([

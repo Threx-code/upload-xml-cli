@@ -40,11 +40,13 @@ class XMLController extends Controller
      */
     public function uploadXMLFile(Request $request): mixed
     {
+        $file = $request->file('file');
+
         // collect file from endpoint
         // determine th type of upload local/remote
         // local should require an upload
         // remote should require a link
-        return self::$repository::uploadXMLFileToGoogleSheet($request);
+        return self::$repository::uploadXMLFileToGoogleSheet($file);
     }
 
 

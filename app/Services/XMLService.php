@@ -4,24 +4,17 @@ namespace App\Services;
 
 use App\Models\User;
 use Carbon\Carbon;
-use Google\Client as GoogleClient;
 use Google\Exception;
 use Google\Service\Oauth2\Userinfo;
 use Google_Client;
 use Illuminate\Http\JsonResponse;
 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Services\GoogleSheetClient;
 class XMLService
 {
-    private static GoogleClient $googleClient;
-
-    public function __construct(GoogleClient $googleClient)
-    {
-        self::$googleClient = $googleClient;
-    }
-
     /**
      * @return Google_Client
      * @throws Exception
@@ -94,14 +87,20 @@ class XMLService
         $this->updateUser($user, $client, $accessToken);
 
         $token = $user->createToken('Google')->accessToken;
-        return response()->json($token, 201);
+        return response()->json(
+            [
+                'message' => 'Access token must be added to the cli command',
+                'access_token' =>$accessToken['access_token'],
+                'authentication_token' => $token
+            ], 201);
     }
 
 
     /**
      * @throws Exception
+     * @throws \JsonException
      */
-    public function uploadXMLToGoogleSheet($request)
+    public function uploadXMLToGoogleSheet($data)
     {
         $user = Auth::user();
         if(!$user){
@@ -109,7 +108,7 @@ class XMLService
         }
 
         if(((strtotime(Carbon::now()) - $user->expires_in)) > 0){
-            return $this->googleAuthURL($request);
+            return $this->googleAuthURL();
         }
 
         $client = $this->googleClient();
@@ -121,7 +120,7 @@ class XMLService
 
         $googleUser = $this->setAccessToken($client, $accessToken['access_token']);
         $this->updateUser($user, $client, $accessToken);
-        return (new GoogleSheetClient)->postToGoogleSheet([["first", "second", "third"]]);
+        return (new GoogleSheetClient)->postToGoogleSheet($this->processXMLFile($data));
 
     }
 
@@ -151,6 +150,26 @@ class XMLService
         $client->setAccessToken($token);
         $service = new \Google\Service\Oauth2($client);
         return $service->userinfo->get();
+    }
+
+    public function processXMLFile($file)
+    {
+        $result =[];
+        $xmlObject = simplexml_load_string(file_get_contents($file), 'SimpleXMLElement', LIBXML_COMPACT | LIBXML_PARSEHUGE|LIBXML_NOCDATA);
+        $json = json_decode(json_encode($xmlObject, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        foreach($json as $key => $value){
+            foreach($value as $newKey => $newValue){
+                //$result [] = $newValue;
+                foreach($newValue  as $hhh){
+                    if(is_array($hhh)){
+                        $hhh = implode(',', $hhh);
+                    }
+                    $result[$newKey][] = $hhh;
+                }
+            }
+        }
+
+        return $result;
     }
 
 
