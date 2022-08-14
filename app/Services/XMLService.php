@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Services\GoogleSheetClient;
+use JsonException;
+
 class XMLService
 {
     /**
@@ -46,7 +48,6 @@ class XMLService
     {
         return $this->googleClient()->createAuthUrl();
     }
-
 
     /**
      * @param $request
@@ -92,18 +93,60 @@ class XMLService
                 'message' => 'Access token must be added to the cli command',
                 'access_token' =>$accessToken['access_token'],
                 'authentication_token' => $token
-            ], 201);
+            ], 201
+        );
     }
 
+    /**
+     * @param $user
+     * @param $client
+     * @param $accessToken
+     * @return void
+     */
+    public function updateUser($user, $client, $accessToken): void
+    {
+        $time = strtotime(Carbon::now()->format('H:i:s')) + $accessToken['expires_in'];
+        $this->setAccessToken($client, $accessToken['access_token']);
+        $user->google_access_token = $accessToken['access_token'];
+        $user->google_refresh_token = $accessToken['refresh_token'];
+        $user->expires_in = strtotime(date(Carbon::now()->format('Y-m-d ')) . date('H:i:s', $time));
+        $user->save();
+    }
 
     /**
+     * @param $client
+     * @param $token
+     * @return Userinfo
+     */
+    public function setAccessToken($client, $token): Userinfo
+    {
+        $client->setAccessToken($token);
+        $service = new \Google\Service\Oauth2($client);
+        return $service->userinfo->get();
+    }
+
+    /**
+     * @param $data
+     * @return string|string[]|void
      * @throws Exception
-     * @throws \JsonException
+     * @throws JsonException
      */
     public function uploadXMLToGoogleSheet($data)
     {
-        $user = Auth::user();
-        if(!$user){
+        $modes = ['auth', 'cli'];
+        if(!in_array($data['mode'], $modes, true)){
+            return ['error' => 'Sorry invalid mode entered. use either auth or cli'];
+        }
+        if($data['mode'] == 'auth') {
+            $user = Auth::user();
+        }else{
+            $user = User::where('google_access_token', $data['token'])->where('provider', 'google')->first();
+        }
+
+        if($user === null){
+            return  $this->googleAuthURL();
+        }
+        if(!$user->google_refresh_token){
             return  $this->googleAuthURL();
         }
 
@@ -118,57 +161,48 @@ class XMLService
             return $this->googleAuthURL();
         }
 
-        $googleUser = $this->setAccessToken($client, $accessToken['access_token']);
+        $this->setAccessToken($client, $accessToken['access_token']);
         $this->updateUser($user, $client, $accessToken);
-        return (new GoogleSheetClient)->postToGoogleSheet($this->processXMLFile($data));
+        if($data['type'] == 'remote'){
+           // return remote
+            //return (new GoogleSheetClient)->postToGoogleSheet($this->processRemoteXMLFile($data['file']));
+        }
+
+       return (new GoogleSheetClient)->postToGoogleSheet($this->processLocalXMLFile($data['file']));
 
     }
 
-    /**
-     * @param $user
-     * @param $client
-     * @param $accessToken
-     * @return void
-     */
-    public function updateUser($user, $client, $accessToken): void
-    {
-        $time = strtotime(Carbon::now()->format('H:i:s')) + $accessToken['expires_in'];
-        $googleUser = $this->setAccessToken($client, $accessToken['access_token']);
-        $user->google_access_token = $googleUser['access_token'];
-        $user->expires_in = strtotime(date(Carbon::now()->format('Y-m-d ')) . date('H:i:s', $time));
-        $user->save();
-    }
 
 
     /**
-     * @param $client
-     * @param $token
-     * @return Userinfo
+     * @param $file
+     * @return array
+     * @throws JsonException
      */
-    public function setAccessToken($client, $token): Userinfo
+    public function processLocalXMLFile($file): array
     {
-        $client->setAccessToken($token);
-        $service = new \Google\Service\Oauth2($client);
-        return $service->userinfo->get();
-    }
-
-    public function processXMLFile($file)
-    {
-        $result =[];
+        $result = $header = [];
         $xmlObject = simplexml_load_string(file_get_contents($file), 'SimpleXMLElement', LIBXML_COMPACT | LIBXML_PARSEHUGE|LIBXML_NOCDATA);
-        $json = json_decode(json_encode($xmlObject, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
-        foreach($json as $key => $value){
-            foreach($value as $newKey => $newValue){
-                //$result [] = $newValue;
-                foreach($newValue  as $hhh){
-                    if(is_array($hhh)){
-                        $hhh = implode(',', $hhh);
+        if(!$xmlObject){
+            return ['Sorry'];
+        }
+        $xmlJson = json_decode(json_encode($xmlObject, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        if(empty($xmlJson)){
+            return ['sorry'];
+        }
+        foreach($xmlJson as $key => $itemArray){
+            foreach($itemArray as $newKey => $newValue){
+                foreach($newValue  as $lastKey => $value){
+                    $header [] = $lastKey;
+                    if(is_array($value)){
+                        $value = implode(',', $value);
                     }
-                    $result[$newKey][] = $hhh;
+                    $result[$newKey][] = $value;
                 }
             }
         }
 
+        array_unshift($result, array_unique($header));
         return $result;
     }
 

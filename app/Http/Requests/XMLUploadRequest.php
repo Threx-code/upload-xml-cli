@@ -5,8 +5,9 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
-class UserAuthentication extends FormRequest
+class XMLUploadRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,7 +26,11 @@ class UserAuthentication extends FormRequest
      */
     public function rules()
     {
-        return [];
+        return [
+            'type' => ['required', 'string', Rule::in('local', 'LOCAL', 'REMOTE', 'remote')],
+            'file' => ['required_if:type,local', 'mimes:xml'],
+            'url' => ['required_if:type,remote', 'url'],
+        ];
     }
 
     /**

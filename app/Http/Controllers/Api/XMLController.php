@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserAuthentication;
+use App\Http\Requests\XMLUploadRequest;
 use Illuminate\Http\Request;
 use App\Contracts\XMLInterface;
 
@@ -35,18 +36,22 @@ class XMLController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param XMLUploadRequest $request
      * @return mixed
      */
-    public function uploadXMLFile(Request $request): mixed
+    public function uploadXMLFile(XMLUploadRequest $request): mixed
     {
         $file = $request->file('file');
+        $type = $request->type;
+        $url = $request->url;
+        $data = [
+            'mode' => 'auth',
+            'type' =>  $type,
+            'url' => $url,
+            'file' => $file,
+        ];
 
-        // collect file from endpoint
-        // determine th type of upload local/remote
-        // local should require an upload
-        // remote should require a link
-        return self::$repository::uploadXMLFileToGoogleSheet($file);
+        return self::$repository::uploadXMLFileToGoogleSheet ($data);
     }
 
 

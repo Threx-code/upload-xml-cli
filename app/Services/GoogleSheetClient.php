@@ -10,6 +10,7 @@ use JetBrains\PhpStorm\ArrayShape;
 
 class GoogleSheetClient
 {
+
     /**
      * @throws Exception
      */
