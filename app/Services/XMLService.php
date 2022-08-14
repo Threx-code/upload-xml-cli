@@ -9,8 +9,6 @@ use Google\Service\Oauth2\Userinfo;
 use Google_Client;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Http\JsonResponse;
-
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Services\GoogleSheetClient;
