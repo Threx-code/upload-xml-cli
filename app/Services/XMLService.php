@@ -168,11 +168,14 @@ class XMLService
             //return (new GoogleSheetClient)->postToGoogleSheet($this->processRemoteXMLFile($data['file']));
         }
 
-       return (new GoogleSheetClient)->postToGoogleSheet($this->processLocalXMLFile($data['file']));
+        if($this->processLocalXMLFile($data['file']) !== "Sorry could not process your file"){
+            return (new GoogleSheetClient)->postToGoogleSheet($this->processLocalXMLFile($data['file']));
+        }
+        else{
+            return  $this->processLocalXMLFile($data['file']);
+        }
 
     }
-
-
 
     /**
      * @param $file
@@ -182,28 +185,32 @@ class XMLService
     public function processLocalXMLFile($file): array
     {
         $result = $header = [];
-        $xmlObject = simplexml_load_string(file_get_contents($file), 'SimpleXMLElement', LIBXML_COMPACT | LIBXML_PARSEHUGE|LIBXML_NOCDATA);
-        if(!$xmlObject){
-            return ['Sorry'];
-        }
-        $xmlJson = json_decode(json_encode($xmlObject, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
-        if(empty($xmlJson)){
-            return ['sorry'];
-        }
-        foreach($xmlJson as $key => $itemArray){
-            foreach($itemArray as $newKey => $newValue){
-                foreach($newValue  as $lastKey => $value){
-                    $header [] = $lastKey;
-                    if(is_array($value)){
-                        $value = implode(',', $value);
+        if(file_get_contents($file)) {
+            $xmlObject = simplexml_load_string(file_get_contents($file), 'SimpleXMLElement', LIBXML_COMPACT | LIBXML_PARSEHUGE | LIBXML_NOCDATA);
+            if (!$xmlObject) {
+                return ['Sorry'];
+            }
+            $xmlJson = json_decode(json_encode($xmlObject, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+            if (empty($xmlJson)) {
+                return ['sorry'];
+            }
+            foreach ($xmlJson as $key => $itemArray) {
+                foreach ($itemArray as $newKey => $newValue) {
+                    foreach ($newValue as $lastKey => $value) {
+                        $header [] = $lastKey;
+                        if (is_array($value)) {
+                            $value = implode(',', $value);
+                        }
+                        $result[$newKey][] = $value;
                     }
-                    $result[$newKey][] = $value;
                 }
             }
-        }
 
-        array_unshift($result, array_unique($header));
-        return $result;
+            array_unshift($result, array_unique($header));
+            return $result;
+        }else{
+            return "Sorry could not process your file";
+        }
     }
 
 

@@ -55,7 +55,7 @@ class RunXML extends Command
         if($type == 'local'){
             $file = $this->ask('enter the path to your xml file');
         }else{
-            $url = $this->ask('enter the path to your xml file');
+            $url = $this->ask('enter valid url to your xml file');
             if(filter_var($url, FILTER_VALIDATE_URL) === false){
                 return $this->info('invalid url entered');
             }

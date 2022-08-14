@@ -25,8 +25,11 @@ class UserAuthentication extends FormRequest
      */
     public function rules()
     {
-        return [];
+        return [
+            'code' => ['required', 'string']
+        ];
     }
+
 
     /**
      * [failedValidation this handles the validation error if no parameter was set]
