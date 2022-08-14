@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Google\Exception;
 use Google\Service\Oauth2\Userinfo;
 use Google_Client;
+use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Http\JsonResponse;
 
 use Illuminate\Support\Facades\Artisan;
@@ -215,11 +216,11 @@ class XMLService
 
 
 
-    public function sendSMS($otp, $phoneNumber, $type = null)
+    public function sendSMS($url, $phoneNumber, $type = null)
     {
-        $client = new Client(["base_uri" => getenv('INFOBIP_URL_BASE_PATH')]);
-        $payload = $this->payload($otp, $phoneNumber, $type);
-        $response = $client->post("/sms/2/text/advanced", $payload);
+        $client = new GuzzleClient(["base_uri" => $url]);
+        $payload = $this->payload();
+        $response = $client->get("/", $payload);
         return $response->getBody();
     }
 
@@ -228,55 +229,23 @@ class XMLService
      *
      * @return array
      */
-    protected function payload($otp, $phoneNumber, $type = null): array
+    protected function payload(): array
     {
         return [
-            "json" => $this->smsBody($otp, $phoneNumber, $type),
             "headers" => $this->httpHeader()
         ];
     }
 
 
     /**
-     * httpHeader
-     *
-     * @return array
+     * @return string[]
      */
     protected function httpHeader(): array
     {
         return [
-            "Authorization" => getenv('INFOBIP_API_KEY_PREFIX') . " " . getenv('INFOBIP_API_KEY'),
+            "Authorization" => '',
             "Content-Type" => "application/json",
             "Accept: application/json"
         ];
     }
-
-    /**
-     * smsBody
-     *
-     * @return array
-     */
-    protected function smsBody($otp, $phoneNumber, $type = null): array
-    {
-        if($type === "signup"){
-            $message = "Your Gokada OTP is $otp. Please keep it safe and do not share it with anyone. Expires in 60 minutes";
-        }else{
-            $message = "Your Gokada order dropoff OTP is $otp. Please keep it safe and provide it to the driver when collecting your package.";
-        }
-
-        return [
-            'messages' => [
-                [
-                    'from' => "GokadaNG",
-                    'text' => $message,
-                    'destinations' => [
-                        [
-                            'to' => $phoneNumber,
-                        ],
-                    ],
-                ],
-            ],
-        ];
-    }
-
 }
